@@ -3,29 +3,39 @@ var http = require('http'),
     httpProxy = require('http-proxy'),
     url = require('url');
 
-var proxy = httpProxy.createServer();
+var err_esc_red = '\x1B[31m';
+var err_esc_black = '\x1B[0m';
+
+var proxy = httpProxy.createServer({ws: true, prependPath: false});
 
 var server = http.createServer(function (req, res) {
-  console.log('Request for ' + req.url);
+  console.log('Req for: ' + req.url);
 
-  proxy.web(req,
-            res,
-            {target: req.url, secure: true},
+  proxy.web(req, res, {target: req.url, secure: false},
             function(e){
-              console.log("\x1B[31m" + "Error: let's just ignore it for now" + "\x1B[0m");
+              if(e){
+                console.error(err_esc_red + 'Something bad happened, let\'s not worry about it just yet...' + err_esc_black)
+              }
             }
            );
 }).listen(8080);
 
 server.on('connect', function (req, socket) {
-  console.log('Request for ' + req.url);
+  console.log('Con req for:' + req.url);
 
   var serverUrl = url.parse('https://' + req.url);
 
   var srvSocket = net.connect(serverUrl.port, serverUrl.hostname, function() {
-    socket.write('HTTP/1.1 200 Connection Established\r\n' +
-    '\r\n');
+    socket.write('HTTP/1.1 200 Connection Established\r\n' + '\r\n');
     srvSocket.pipe(socket);
     socket.pipe(srvSocket);
   });
+});
+
+server.on('error', function(e){
+  console.error(err_esc_red + 'Server error, pls forgib many grievance' + err_esc_black);
+});
+
+process.on('uncaughtException', function (err) {
+  console.error(err_esc_red + 'TCP protocol error: ' + err.stack.split('\n')[0] + err_esc_black);
 });
