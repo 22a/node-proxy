@@ -21,21 +21,18 @@ var server = http.createServer(function (req, res) {
   }
   else {
     console.log('Req for: ' + req.url);
-    proxy.web(req, res, {target: req.url, secure: false},
-              function(e){
-                if(e){
-                  console.error(err_esc_red + 'Something bad happened, let\'s not worry about it just yet...' + err_esc_black)
-                }
-              }
-             );
+    proxy.web(req, res, {target: req.url, secure: false}, function(e){
+      // proxy module error logging
+      if(e){
+        console.error(err_esc_red + 'Something bad happened, let\'s not worry about it just yet...' + err_esc_black)
+      }
+    });
   }
 }).listen(8080);
 
 server.on('connect', function (req, socket) {
   console.log('Con req for:' + req.url);
-
   var serverUrl = url.parse('https://' + req.url);
-
   var srvSocket = net.connect(serverUrl.port, serverUrl.hostname, function() {
     socket.write('HTTP/1.1 200 Connection Established\r\n' + '\r\n');
     srvSocket.pipe(socket);
@@ -43,10 +40,12 @@ server.on('connect', function (req, socket) {
   });
 });
 
-server.on('error', function(e){
-  console.error(err_esc_red + 'Server error, pls forgib many grievance' + err_esc_black);
-});
-
-process.on('uncaughtException', function (err) {
-  console.error(err_esc_red + 'TCP protocol error: ' + err.stack.split('\n')[0] + err_esc_black);
+// explicit tcp error handling
+process.on('uncaughtException', function (e) {
+  if (e.stack.includes('ECONNRESET') || e.stack.includes('ECONNREFUSED')){
+    console.error(err_esc_red + 'TCP ' + e.stack.split('\n')[0] + err_esc_black);
+  }
+  else{
+    throw e;
+  }
 });
