@@ -7,6 +7,35 @@ var err_esc_red = '\x1B[31m';
 var err_esc_green = '\x1B[32m';
 var err_esc_black = '\x1B[0m';
 
+
+var express = require('express');
+var app = express();
+var bodyParser = require('body-parser');
+
+app.use(express.static(__dirname + '/public'));
+app.use(bodyParser.json());
+app.listen(8000);
+
+app.get('/blacklist', function(req, res) {
+  res.json(Array.from(blacklist));
+});
+
+app.post('/blacklist', function(req, res) {
+  blacklist.add(req.body.site);
+  res.json(Array.from(blacklist));
+});
+
+app.delete('/blacklist/*', function(req, res) {
+  blacklist.delete(req.params[0]);
+  res.json(Array.from(blacklist));
+});
+
+app.get('*', function(req, res) {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+
+
 var blacklist = new Set();
 blacklist.add('http://hire.meehan.co/');
 

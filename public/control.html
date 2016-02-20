@@ -1,0 +1,8 @@
+<h1>Blacklisted sites:</h1>
+<div ng-repeat="site in blacklist">
+  <div class="site">{{site}} <button class="btn-danger" ng-click="deleteSite(site)">delete</button></div>
+</div>
+<form name="newSiteForm" class="site">
+  <input type="url" ng-model="url" placeholder="http[s]://[www/___.]____.____/" required>
+  <button class="btn-success" ng-click="addSite(url);url='';" ng-disabled="newSiteForm.$invalid">add</button>
+</form>
