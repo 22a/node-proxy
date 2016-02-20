@@ -1,0 +1,22 @@
+{
+  "name": "node-proxy",
+  "version": "1.0.0",
+  "description": "a proxy that proxys things hopefully. proxy.",
+  "main": "proxy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/22a/node-proxy.git"
+  },
+  "author": "22a",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/22a/node-proxy/issues"
+  },
+  "homepage": "https://github.com/22a/node-proxy#readme",
+  "dependencies": {
+    "http-proxy": "^1.13.2"
+  }
+}
