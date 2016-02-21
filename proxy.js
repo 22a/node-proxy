@@ -4,7 +4,28 @@ var http = require('http'),
     url = require('url'),
     ws = require('ws'),
     express = require('express'),
-    bodyParser = require('body-parser');
+    bodyParser = require('body-parser'),
+    fs = require('fs');
+
+
+// CacheDir creation, if not exists //
+
+fs.stat(__dirname + '/cache/', function(err, stats){
+  if (err) {
+    if (err.code === 'ENOENT') {
+      fs.mkdir(__dirname + '/cache/', function(err){
+        if (err) throw err;
+        else {
+          console.log('created cachedir at ' + __dirname + '/cache/');
+        }
+      });
+    }
+    else throw err;
+  }
+  else {
+    console.log(__dirname + '/cache/ being used as cachedir');
+  }
+});
 
 
 // Websocket Driven Console //
@@ -120,7 +141,8 @@ process.on('uncaughtException', function (e) {
   if (pre.includes('ECONNRESET') || pre.includes('ECONNREFUSED') || pre.includes('ENOTFOUND')) {
     console.error('TCP ' + pre);
   }
-  else if (pre.includes('Can\'t set headers after they are sent.')) {
+  else if (pre.includes('socket hang up')){
+    console.error(pre);
   }
   else{
     throw e;
