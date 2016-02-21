@@ -1,7 +1,29 @@
 .dashboard {
-  padding: 50px;
 }
 
-.site {
-  padding-top: 1em;
+.blacklist-container {
+  height: 70vh;
+}
+
+.message-list {
+  width: 100%;
+  height: 30vh;
+  resize: none;
+  font-size: 8px;
+  background-color: #222;
+  color: white;
+  border: none;
+  padding: 10px;
+  position: absolute;
+  bottom: 0;
+}
+
+.blacklist-input {
+  padding-bottom: 1em;
+  position: absolute;
+  bottom: 0;
+}
+
+.select {
+  height: 40px;
 }

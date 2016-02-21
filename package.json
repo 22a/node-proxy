@@ -17,9 +17,10 @@
   },
   "homepage": "https://github.com/22a/node-proxy#readme",
   "dependencies": {
-    "http-proxy": "^1.13.2",
     "body-parser": "^1.15.0",
-    "express": "^4.13.4"
+    "express": "^4.13.4",
+    "http-proxy": "^1.13.2",
+    "ws": "^1.0.1"
   },
   "devDependencies": {
     "nodemon": "^1.9.0"
