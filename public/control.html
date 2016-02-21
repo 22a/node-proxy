@@ -21,7 +21,7 @@
           <input type="text" class="form-control" ng-model="url.domain" id="url" placeholder="[www/___.] ____.____" required>
 
           <span class="input-group-btn">
-            <button type="button" class="btn btn-success" ng-click="addSite(url.protocol + url.domain);url.domain='';" ng-disabled="newSiteForm.$invalid">add</button>
+            <button type="button" class="btn btn-success" ng-click="addSite();" ng-disabled="newSiteForm.$invalid">add</button>
           </span>
 
         </div>

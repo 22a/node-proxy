@@ -1,13 +1,13 @@
 var http = require('http'),
     net = require('net'),
     httpProxy = require('http-proxy'),
-    url = require('url');
+    url = require('url'),
+    ws = require('ws'),
+    express = require('express'),
+    bodyParser = require('body-parser');
 
-var err_esc_red = '\x1B[31m';
-var err_esc_green = '\x1B[32m';
-var err_esc_black = '\x1B[0m';
 
-var ws = require('ws');
+// Websocket Driven Console //
 var WebSocketServer = ws.Server
   , wss = new WebSocketServer({ port: 8008 });
 
@@ -20,20 +20,35 @@ wss.broadcast = function broadcast(data) {
   });
 };
 
-var express = require('express');
+
+// Express Resuful API //
+
+var blacklist = new Set();
+blacklist.add('http://hire.meehan.co/');
+blacklist.add('www.facebook.com:443');
+blacklist.add('facebook.com:443');
+
 var app = express();
-var bodyParser = require('body-parser');
 
 app.use(express.static(__dirname + '/public'));
 app.use(bodyParser.json());
 app.listen(8000);
 
+//blacklist endpoints
 app.get('/blacklist', function(req, res) {
   res.json(Array.from(blacklist));
 });
 
 app.post('/blacklist', function(req, res) {
-  blacklist.add(req.body.site);
+  var url = req.body.site;
+  if(url[4] === 's'){
+    url = url.substring(8);
+    if (url.slice(-1) === '/'){
+      url = url.substring(0,url.length-1);
+    }
+    url += ':443';
+  }
+  blacklist.add(url);
   res.json(Array.from(blacklist));
 });
 
@@ -47,47 +62,65 @@ app.get('*', function(req, res) {
 });
 
 
+// Blacklist Logic
 
-var blacklist = new Set();
-blacklist.add('http://hire.meehan.co/');
+var blacklisted = function (site, callback){
+  var found = false;
+  blacklist.forEach(function each(b_site) {
+    if (site.indexOf(b_site) === 0){
+      callback(true);
+      found = true;
+    }
+  });
+  if (found) { return; }
+  callback(false);
+}
+
+
+// Proxy Server //
 
 var proxy = httpProxy.createServer({ws: true, prependPath: false});
 
 var server = http.createServer(function (req, res) {
-  if (blacklist.has(req.url)){
-    //console.log(err_esc_green + 'Blocked request to blacklisted site: ' + req.url + err_esc_black);
-    wss.broadcast('Blocked request to blacklisted site: ' + req.url);
-    res.writeHead(401, {'Content-Type': 'text/plain'});
-    res.write('Access to blacklisted site denied.\n' + req.url + '\n');
-    res.end();
-  }
-  else {
-    //console.log('Req for: ' + req.url);
-    wss.broadcast(req.url);
-    proxy.web(req, res, {target: req.url, secure: false}, function(e){
-      // proxy module error logging
-      if(e){
-        //console.error(err_esc_red + 'Something bad happened, let\'s not worry about it just yet...' + err_esc_black)
-      }
-    });
-  }
+  blacklisted(req.url, function(bool) {
+    if (bool){
+      wss.broadcast('Blocked request to blacklisted site: ' + req.url);
+      res.writeHead(401, {'Content-Type': 'text/plain'});
+      res.write('Access to blacklisted site denied.\n' + req.url + '\n');
+      res.end();
+    }
+    else {
+      wss.broadcast(req.url);
+      proxy.web(req, res, {target: req.url, secure: false});
+    }
+  });
 }).listen(8080);
 
 server.on('connect', function (req, socket) {
-  //console.log('Con req for:' + req.url);
-  wss.broadcast(req.url);
-  var serverUrl = url.parse('https://' + req.url);
-  var srvSocket = net.connect(serverUrl.port, serverUrl.hostname, function() {
-    socket.write('HTTP/1.1 200 Connection Established\r\n' + '\r\n');
-    srvSocket.pipe(socket);
-    socket.pipe(srvSocket);
+  blacklisted(req.url, function(bool) {
+    if (bool) {
+      wss.broadcast('Blocked CON request to blacklisted site: ' + req.url);
+      socket.end('HTTP/1.1 403 Forbidden\r\n' + '\r\n');
+    }
+    else {
+      wss.broadcast(req.url);
+      var serverUrl = url.parse('https://' + req.url);
+      var srvSocket = net.connect(serverUrl.port, serverUrl.hostname, function() {
+        socket.write('HTTP/1.1 200 Connection Established\r\n' + '\r\n');
+        srvSocket.pipe(socket);
+        socket.pipe(srvSocket);
+      });
+    }
   });
 });
 
 // explicit tcp error handling
 process.on('uncaughtException', function (e) {
-  if (e.stack.includes('ECONNRESET') || e.stack.includes('ECONNREFUSED') || e.stack.includes('ENOTFOUND')) {
-    console.error(err_esc_red + 'TCP ' + e.stack.split('\n')[0] + err_esc_black);
+  var pre = e.stack.split('\n')[0];
+  if (pre.includes('ECONNRESET') || pre.includes('ECONNREFUSED') || pre.includes('ENOTFOUND')) {
+    console.error('TCP ' + pre);
+  }
+  else if (pre.includes('Can\'t set headers after they are sent.')) {
   }
   else{
     throw e;

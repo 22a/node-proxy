@@ -45,10 +45,11 @@ var nodeProxy = angular.module('nodeProxy', ['ngRoute'])
     console.log('Error retreving blacklist');
   });
 
-  $scope.addSite = function(site) {
-    $http.post('/blacklist', {site})
+  $scope.addSite = function() {
+    $http.post('/blacklist', {'site':$scope.url.protocol + $scope.url.domain})
     .success(function(data) {
       $scope.blacklist = data;
+      $scope.url.domain = '';
     })
     .error(function(data) {
       console.log('Error adding site to blacklist');
