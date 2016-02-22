@@ -1,8 +1,21 @@
 .dashboard {
 }
 
-.blacklist-container {
+.top{
   height: 70vh;
+}
+
+.left-panel {
+  padding-top: 5vh;
+}
+
+.head-text {
+  text-align: center;
+}
+
+.blacklist {
+  height: 70vh;
+  overflow-y: scroll;
 }
 
 .message-list {
@@ -16,14 +29,4 @@
   padding: 10px;
   position: absolute;
   bottom: 0;
-}
-
-.blacklist-input {
-  padding-bottom: 1em;
-  position: absolute;
-  bottom: 0;
-}
-
-.select {
-  height: 40px;
 }

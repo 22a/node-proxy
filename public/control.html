@@ -1,13 +1,9 @@
 <div class="container-fluid">
   <div class="row top">
-    <div class="col-xs-12 col-md-6 blacklist-container">
-      <h3>Blacklist:</h3>
-      <ul ng-repeat="site in blacklist" class="list-group">
-        <div class="list-group-item">{{site}} <button class="btn btn-danger" ng-click="deleteSite(site)">delete</button></div>
-      </ul>
-
+    <div class="col-xs-10 col-md-6 left-panel">
+      <h4 class="head-text">Peter Meehan - 13318031</h3>
+      <h4 class="head-text">Node.js Proxy Managment Console</h3>
       <form name="newSiteForm" class="blacklist-input">
-        <label for="url">Add site to blacklist:</label>
         <div class="input-group">
 
           <div class="input-group-btn">
@@ -18,7 +14,7 @@
             </ul>
           </div>
 
-          <input type="text" class="form-control" ng-model="url.domain" id="url" placeholder="[www/___.] ____.____" required>
+          <input type="text" class="form-control" ng-model="url.domain" placeholder="[www./___.]example.com" required>
 
           <span class="input-group-btn">
             <button type="button" class="btn btn-success" ng-click="addSite();" ng-disabled="newSiteForm.$invalid">add</button>
@@ -27,7 +23,10 @@
         </div>
       </form>
     </div>
-    <div class="col-xs-12 col-md-6 cache-container">
+    <div class="col-xs-12 col-md-6 blacklist">
+      <ul ng-repeat="site in blacklist" class="list-group">
+        <div class="list-group-item">{{site}} <button class="btn btn-sm btn-danger" ng-click="deleteSite(site)">delete</button></div>
+      </ul>
     </div>
   </div>
 </div>
