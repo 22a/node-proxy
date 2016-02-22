@@ -10,25 +10,57 @@ var http = require('http'),
 
 // CacheDir creation, if not exists //
 
-fs.stat(__dirname + '/cache/', function(err, stats){
+var cachedir = __dirname + '/cache/';
+
+fs.stat(cachedir, function(err, stats){
   if (err) {
     if (err.code === 'ENOENT') {
-      fs.mkdir(__dirname + '/cache/', function(err){
+      fs.mkdir(cachedir, function(err){
         if (err) throw err;
         else {
-          console.log('created cachedir at ' + __dirname + '/cache/');
+          console.log('created cachedir at ' + cachedir);
         }
       });
     }
     else throw err;
   }
   else {
-    console.log(__dirname + '/cache/ being used as cachedir');
+    console.log(cachedir + ' being used as cachedir');
   }
 });
 
 
+// Cache Control //
+
+var cache = {cacheSeed: 0};
+
+var isCached = function(url, callback) {
+  if (cache.hasOwnProperty(url)){
+    if(cache[url].date > new Date()){
+      callback(true);
+    }
+    else {
+      // cached data has expired
+      fs.unlink(cachedir + cache[url].id, function(e){
+        if (e) {
+          console.log('couldn\'t delete file');
+          throw e;
+        }
+        delete cache[url];
+        callback(false);
+      });
+    }
+  }
+  else {
+    // page was not previously cached
+    callback(false);
+  }
+};
+
+
+
 // Websocket Driven Console //
+
 var WebSocketServer = ws.Server
   , wss = new WebSocketServer({ port: 8008 });
 
@@ -111,11 +143,27 @@ var server = http.createServer(function (req, res) {
       res.end();
     }
     else {
-      wss.broadcast(req.url);
-      proxy.web(req, res, {target: req.url, secure: false});
+      isCached(req.url, function(inCache){
+        //if (inCache) {
+        //  wss.broadcast('serving cached version of: ' + req.url);
+          //fs.createReadStream(cachedir + cache[req.url].id).pipe(res);
+          //res.end();
+        //}
+        //else {
+          wss.broadcast(req.url);
+          proxy.web(req, res, {target: req.url, secure: false});
+       // }
+      });
     }
   });
 }).listen(8080);
+
+
+proxy.on('proxyRes', function(proxyRes, req, res) {
+  cache[req.url] = {date: new Date(new Date().getTime()+(10*60*1000)),
+    id: cache.cacheSeed++}
+    proxyRes.pipe(fs.createWriteStream(cachedir + cache[req.url].id));
+});
 
 server.on('connect', function (req, socket) {
   blacklisted(req.url, function(bool) {
