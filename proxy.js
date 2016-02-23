@@ -26,6 +26,15 @@ fs.stat(cachedir, function(err, stats){
   }
   else {
     console.log(cachedir + ' being used as cachedir');
+    var files = fs.readdirSync(cachedir);
+    if (files.length > 0) {
+      for (var i = 0; i < files.length; i++) {
+        var filePath = cachedir + files[i];
+        if (fs.statSync(filePath).isFile()){
+          fs.unlinkSync(filePath);
+        }
+      }
+    }
   }
 });
 
@@ -57,6 +66,37 @@ var isCached = function(url, callback) {
   }
 };
 
+writeToCache = function(req, res){
+  if(req.method === 'GET' || req.method === 'HEAD') {
+    if(res.statusCode >= 200 && res.statusCode < 400) {
+      if (!res.headers.hasOwnProperty('cache-control') ||
+          (res.headers.hasOwnProperty('cache-control') &&
+           !res.headers['cache-control'].includes('no-cache') &&
+             !res.headers['cache-control'].includes('no-store'))){
+               var metadata = {
+                 statusCode: res.statusCode,
+                 headers: res.headers
+               };
+               cache[req.url] = {date: new Date(new Date().getTime()+(10*60*1000)), id: cache.cacheSeed++};
+               var metaStream = fs.createWriteStream(cachedir + cache[req.url].id + '.meta');
+               metaStream.end(JSON.stringify(metadata));
+               var dataStream = fs.createWriteStream(cachedir + cache[req.url].id);
+               res.pipe(dataStream);
+      }
+    }
+  }
+};
+
+readMetaFromCache = function(url, callback) {
+  var readableStream = fs.createReadStream(cachedir + cache[url].id + '.meta');
+  var meta = '';
+  readableStream.on('data', function(chunk) {
+    meta+=chunk;
+  });
+  readableStream.on('end', function() {
+    callback(JSON.parse(meta));
+  });
+}
 
 
 // Websocket Driven Console //
@@ -145,9 +185,14 @@ var server = http.createServer(function (req, res) {
     else {
       isCached(req.url, function(inCache){
         if (inCache) {
-          wss.broadcast('serving cached version of: ' + req.url);
-          fs.createReadStream(cachedir + cache[req.url].id).pipe(res);
-          res.end();
+          readMetaFromCache(req.url, function(metadata) {
+            if(metadata) {
+              res.writeHead(metadata.statusCode, metadata.headers);
+              wss.broadcast('serving cached version of: ' + req.url);
+              var readableStream = fs.createReadStream(cachedir + cache[req.url].id);
+              readableStream.pipe(res);
+            }
+          })
         }
         else {
           wss.broadcast(req.url);
@@ -160,9 +205,7 @@ var server = http.createServer(function (req, res) {
 
 
 proxy.on('proxyRes', function(proxyRes, req, res) {
-  cache[req.url] = {date: new Date(new Date().getTime()+(10*60*1000)),
-    id: cache.cacheSeed++}
-    proxyRes.pipe(fs.createWriteStream(cachedir + cache[req.url].id));
+  writeToCache(req, proxyRes);
 });
 
 server.on('connect', function (req, socket) {
@@ -186,7 +229,7 @@ server.on('connect', function (req, socket) {
 // explicit tcp error handling
 process.on('uncaughtException', function (e) {
   var pre = e.stack.split('\n')[0];
-  if (pre.includes('ECONNRESET') || pre.includes('ECONNREFUSED') || pre.includes('ENOTFOUND')) {
+  if (pre.includes('ECONNRESET') || pre.includes('ECONNREFUSED') || pre.includes('ENOTFOUND') || pre.includes('ETIMEOUT')) {
     console.error('TCP ' + pre);
   }
   else if (pre.includes('socket hang up')){
