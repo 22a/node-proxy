@@ -1,4 +1,4 @@
-var nodeProxy = angular.module('nodeProxy', ['ngRoute'])
+var nodeProxy = angular.module('nodeProxy', ['ngRoute', 'uiSwitch'])
 
 .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
   $routeProvider
@@ -28,6 +28,24 @@ var nodeProxy = angular.module('nodeProxy', ['ngRoute'])
   $scope.messageLog = '';
   $scope.url = {};
   $scope.url.protocol = 'http://';
+
+  $scope.caching = true;
+  $scope.$watch("caching", function(newValue, oldValue) {
+    if (newValue != oldValue) {
+      $http.post('/toggleCache', {'value': newValue})
+      .error(function(data){
+      });
+    }
+  });
+
+  $scope.blacklisting = true;
+  $scope.$watch("blacklisting", function(newValue, oldValue) {
+    if (newValue != oldValue) {
+      $http.post('/toggleBlacklist', {'value': newValue})
+      .error(function(data){
+      });
+    }
+  });
 
   var proxySocket = new WebSocket("ws://localhost:8008");
   proxySocket.onmessage = function (event) {

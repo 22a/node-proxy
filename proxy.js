@@ -42,9 +42,10 @@ fs.stat(cachedir, function(err, stats){
 // Cache Control //
 
 var cache = {cacheSeed: 0};
+var useCaching = true;
 
 var isCached = function(url, callback) {
-  if (cache.hasOwnProperty(url)){
+  if (useCaching && cache.hasOwnProperty(url)){
     if(cache[url].date > new Date()){
       callback(true);
     }
@@ -116,10 +117,18 @@ wss.broadcast = function broadcast(data) {
 
 // Express Resuful API //
 
+var useBlacklist = true;
 var blacklist = new Set();
-blacklist.add('http://hire.meehan.co/');
+blacklist.add('http://hire.meehan.co');
+blacklist.add('http://cbrenn.xyz');
+blacklist.add('http://meehan.co');
+blacklist.add('http://www.hobbyfarms.com');
 blacklist.add('www.facebook.com:443');
 blacklist.add('facebook.com:443');
+blacklist.add('http://www.bible-truths.com');
+blacklist.add('http://modernfarmer.com/2014/06/herding-dogs-magic');
+blacklist.add('ducss.ie:443');
+blacklist.add('www.ducss.ie:443');
 
 var app = express();
 
@@ -150,6 +159,15 @@ app.delete('/blacklist/*', function(req, res) {
   res.json(Array.from(blacklist));
 });
 
+app.post('/toggleBlacklist', function(req, res) {
+  useBlacklist = req.body.value?true:false;
+  res.json(useBlacklist);
+});
+app.post('/toggleCache', function(req, res) {
+  useCaching = req.body.value?true:false;
+  res.json(useCaching);
+});
+
 app.get('*', function(req, res) {
   res.sendFile(__dirname + '/public/index.html');
 });
@@ -159,12 +177,14 @@ app.get('*', function(req, res) {
 
 var blacklisted = function (site, callback){
   var found = false;
-  blacklist.forEach(function each(b_site) {
-    if (site.indexOf(b_site) === 0){
-      callback(true);
-      found = true;
-    }
-  });
+  if(useBlacklist){
+    blacklist.forEach(function each(b_site) {
+      if (site.indexOf(b_site) === 0){
+        callback(true);
+        found = true;
+      }
+    });
+  }
   if (found) { return; }
   callback(false);
 }
@@ -205,7 +225,9 @@ var server = http.createServer(function (req, res) {
 
 
 proxy.on('proxyRes', function(proxyRes, req, res) {
-  writeToCache(req, proxyRes);
+  if (useCaching) {
+    writeToCache(req, proxyRes);
+  }
 });
 
 server.on('connect', function (req, socket) {

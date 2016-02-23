@@ -1,6 +1,6 @@
 <div class="container-fluid">
   <div class="row top">
-    <div class="col-xs-10 col-md-6 left-panel">
+    <div class="col-xs-10 col-md-5 left-panel">
       <h4 class="head-text">Peter Meehan - 13318031</h3>
       <h4 class="head-text">Node.js Proxy Managment Console</h3>
       <form name="newSiteForm" class="blacklist-input">
@@ -22,10 +22,20 @@
 
         </div>
       </form>
+      <div class="cacheToggle">
+        <h4 class="left">Caching:</h4>
+        <div class="left">
+          <switch ng-model="caching" class="green"></switch>
+        </div>
+        <h4 class="left">Blacklisting:</h4>
+        <div class="left">
+          <switch ng-model="blacklisting" class="green"></switch>
+        </div>
+      </div>
     </div>
-    <div class="col-xs-12 col-md-6 blacklist">
+    <div class="col-xs-12 col-md-7 blacklist">
       <ul ng-repeat="site in blacklist" class="list-group">
-        <div class="list-group-item">{{site}} <button class="btn btn-sm btn-danger" ng-click="deleteSite(site)">delete</button></div>
+        <div class="list-group-item">{{site}} <button class="btn btn-sm btn-danger right" ng-click="deleteSite(site)">delete</button></div>
       </ul>
     </div>
   </div>

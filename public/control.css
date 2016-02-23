@@ -6,16 +6,31 @@
 }
 
 .left-panel {
-  padding-top: 5vh;
+  padding-top: 15vh;
 }
 
 .head-text {
   text-align: center;
 }
 
+.cacheToggle {
+  padding-top: 15vh;
+  text-align: center;
+}
+
 .blacklist {
   height: 70vh;
   overflow-y: scroll;
+  margin-top: 1vh;
+  margin-bottom: 1vh;
+}
+
+.right {
+  float: right;
+}
+.left {
+  float: left;
+  padding-left: 1em;
 }
 
 .message-list {
